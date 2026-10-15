@@ -1,0 +1,181 @@
+export const LANGS = ["uz", "ru"] as const;
+export type Lang = (typeof LANGS)[number];
+
+export function isLang(x: string): x is Lang {
+  return (LANGS as readonly string[]).includes(x);
+}
+
+/** pick(obj, "title", "ru") -> obj.titleRu */
+export function pick<T extends Record<string, unknown>>(obj: T, base: string, lang: Lang): string {
+  const key = base + (lang === "uz" ? "Uz" : "Ru");
+  const v = obj[key] as string | undefined;
+  if (v) return v;
+  const other = obj[base + (lang === "uz" ? "Ru" : "Uz")] as string | undefined;
+  return other ?? "";
+}
+
+const uz = {
+  nav: { courses: "Kurslar", tests: "Testlar", library: "Kutubxona", contacts: "Kontaktlar", signup: "Yozilish" },
+  hero: { form: "Ismingiz va raqamingizni qoldiring — menejer 15 daqiqa ichida qoʻngʻiroq qiladi", cta: "Qoʻngʻiroq kutaman" },
+  form: {
+    name: "Ismingiz",
+    phone: "Telefon raqam",
+    course: "Toifa",
+    anyCourse: "Hali tanlamadim",
+    branch: "Filial",
+    anyBranch: "Menga yaqin filial",
+    submit: "Kursga yozilish",
+    sending: "Yuborilmoqda…",
+    okTitle: "Arizangiz qabul qilindi",
+    okText: "Menejer tez orada sizga qoʻngʻiroq qiladi. Hozircha testlarni yechib koʻring.",
+    errPhone: "Raqamni +998 XX XXX XX XX formatida kiriting",
+    errName: "Ismingizni kiriting",
+    errServer: "Yuborib boʻlmadi. Telefon orqali qoʻngʻiroq qiling:",
+    privacy: "Tugmani bosish orqali shaxsiy maʼlumotlarni qayta ishlashga rozilik berasiz",
+  },
+  stats: { graduates: "bitiruvchi", passRate: "imtihonni birinchi urinishda topshiradi", years: "yillik tajriba", cars: "oʻquv avtomobili" },
+  courses: {
+    title: "Kurslar va narxlar",
+    lead: "Narx nazariya, amaliy mashgʻulotlar va ichki imtihonni oʻz ichiga oladi.",
+    theory: "nazariya",
+    practice: "amaliyot",
+    hours: "soat",
+    sum: "soʻm",
+    choose: "Tanlash",
+    category: "Toifa",
+    installments: "Boʻlib toʻlash mumkin",
+  },
+  steps: {
+    title: "Oʻqish qanday boʻladi",
+    items: [
+      ["Ariza", "Saytda ariza qoldirasiz, menejer qoʻngʻiroq qilib, guruh va jadvalni tanlashga yordam beradi."],
+      ["Nazariya", "Yoʻl harakati qoidalari darslari va saytdagi biletlar boʻyicha mustaqil tayyorgarlik."],
+      ["Amaliyot", "Instruktor bilan avtodrom va shahar yoʻllarida haydash."],
+      ["Imtihon", "Ichki imtihon, soʻng YHXB imtihoni va guvohnoma."],
+    ],
+  },
+  tryTest: { title: "Bilet savolini hozir yechib koʻring", text: "Saytda barcha biletlar, imtihon rejimi va xatolar ustida ishlash bor — bepul.", all: "Barcha biletlar", right: "Toʻgʻri!", wrong: "Notoʻgʻri. Toʻgʻri javob belgilangan." },
+  library: { title: "Kutubxona", lead: "Darsliklar, qoidalar va qoʻllanmalar — oʻqing yoki yuklab oling.", download: "Yuklab olish", open: "Ochish", empty: "Kitoblar tez orada qoʻshiladi.", all: "Butun kutubxona" },
+  reviews: { title: "Bitiruvchilar fikri" },
+  branches: { title: "Filiallar", map: "Xaritada ochish" },
+  faq: { title: "Koʻp soʻraladigan savollar" },
+  finalCta: { title: "Oʻqishni bu hafta boshlang", text: "Yangi guruhlar har hafta ochiladi. Ariza qoldiring — joyni band qilib qoʻyamiz." },
+  footer: { rights: "Barcha huquqlar himoyalangan", license: "Litsenziya" },
+  tests: {
+    title: "YHQ biletlari",
+    lead: "Biletlar boʻyicha mashq qiling, imtihonni sinab koʻring va xatolaringiz ustida ishlang.",
+    exam: "Imtihon",
+    examText: (q: number, m: number, e: number) => `${q} ta tasodifiy savol, ${m} daqiqa, ${e} tadan ortiq xato qilish mumkin emas — xuddi YHXBdagi kabi.`,
+    startExam: "Imtihonni boshlash",
+    tickets: "Biletlar",
+    ticket: "Bilet",
+    topics: "Mavzular boʻyicha",
+    mistakes: "Mening xatolarim",
+    mistakesText: "Xato javob bergan savollaringiz shu yerda saqlanadi.",
+    noMistakes: "Hozircha xatolar yoʻq. Biletlarni yechib koʻring.",
+    question: "Savol",
+    of: "/",
+    next: "Keyingi savol",
+    finish: "Yakunlash",
+    explanation: "Izoh",
+    timeLeft: "Qolgan vaqt",
+    errors: "Xatolar",
+    passed: "Imtihon topshirildi",
+    failed: "Imtihon topshirilmadi",
+    result: (c: number, t: number) => `${t} tadan ${c} ta toʻgʻri javob`,
+    retry: "Qayta urinish",
+    back: "Barcha testlar",
+    ctaTitle: "Endi amaliyot navbati",
+    ctaText: "Instruktor bilan haydashga yoziling — menejer qoʻngʻiroq qiladi.",
+    empty: "Savollar hali qoʻshilmagan.",
+    questionsCount: (n: number) => `${n} ta savol`,
+    timeUp: "Vaqt tugadi",
+  },
+  contacts: { title: "Kontaktlar", call: "Qoʻngʻiroq qilish", write: "Telegramga yozish" },
+  common: { more: "Batafsil", home: "Bosh sahifa" },
+};
+
+const ru: typeof uz = {
+  nav: { courses: "Курсы", tests: "Билеты ПДД", library: "Библиотека", contacts: "Контакты", signup: "Записаться" },
+  hero: { form: "Оставьте имя и телефон — менеджер перезвонит в течение 15 минут", cta: "Жду звонка" },
+  form: {
+    name: "Ваше имя",
+    phone: "Телефон",
+    course: "Категория",
+    anyCourse: "Ещё не выбрал",
+    branch: "Филиал",
+    anyBranch: "Ближайший ко мне",
+    submit: "Записаться на курс",
+    sending: "Отправляем…",
+    okTitle: "Заявка принята",
+    okText: "Менеджер скоро перезвонит. А пока попробуйте решить билеты.",
+    errPhone: "Введите номер в формате +998 XX XXX XX XX",
+    errName: "Введите имя",
+    errServer: "Не удалось отправить. Позвоните нам:",
+    privacy: "Нажимая кнопку, вы соглашаетесь на обработку персональных данных",
+  },
+  stats: { graduates: "выпускников", passRate: "сдают экзамен с первой попытки", years: "лет работы", cars: "учебных автомобилей" },
+  courses: {
+    title: "Курсы и цены",
+    lead: "В стоимость входят теория, практическое вождение и внутренний экзамен.",
+    theory: "теория",
+    practice: "практика",
+    hours: "ч",
+    sum: "сум",
+    choose: "Выбрать",
+    category: "Категория",
+    installments: "Можно в рассрочку",
+  },
+  steps: {
+    title: "Как проходит обучение",
+    items: [
+      ["Заявка", "Оставляете заявку, менеджер перезванивает и помогает подобрать группу и расписание."],
+      ["Теория", "Занятия по ПДД и самостоятельная подготовка по билетам на сайте."],
+      ["Вождение", "Практика с инструктором на автодроме и в городе."],
+      ["Экзамен", "Внутренний экзамен, затем экзамен в ГАИ и получение прав."],
+    ],
+  },
+  tryTest: { title: "Решите вопрос из билета прямо сейчас", text: "На сайте все билеты, режим экзамена и работа над ошибками — бесплатно.", all: "Все билеты", right: "Верно!", wrong: "Неверно. Правильный ответ отмечен." },
+  library: { title: "Библиотека", lead: "Учебники, правила и пособия — читайте онлайн или скачивайте.", download: "Скачать", open: "Открыть", empty: "Книги скоро появятся.", all: "Вся библиотека" },
+  reviews: { title: "Отзывы выпускников" },
+  branches: { title: "Филиалы", map: "Открыть на карте" },
+  faq: { title: "Частые вопросы" },
+  finalCta: { title: "Начните учиться на этой неделе", text: "Новые группы стартуют каждую неделю. Оставьте заявку — забронируем место." },
+  footer: { rights: "Все права защищены", license: "Лицензия" },
+  tests: {
+    title: "Билеты ПДД",
+    lead: "Тренируйтесь по билетам, пробуйте экзамен и разбирайте свои ошибки.",
+    exam: "Экзамен",
+    examText: (q: number, m: number, e: number) => `${q} случайных вопросов, ${m} минут, не больше ${e} ошибок — как в ГАИ.`,
+    startExam: "Начать экзамен",
+    tickets: "Билеты",
+    ticket: "Билет",
+    topics: "По темам",
+    mistakes: "Мои ошибки",
+    mistakesText: "Здесь сохраняются вопросы, в которых вы ошиблись.",
+    noMistakes: "Ошибок пока нет. Попробуйте решить билеты.",
+    question: "Вопрос",
+    of: "из",
+    next: "Следующий вопрос",
+    finish: "Завершить",
+    explanation: "Пояснение",
+    timeLeft: "Осталось",
+    errors: "Ошибки",
+    passed: "Экзамен сдан",
+    failed: "Экзамен не сдан",
+    result: (c: number, t: number) => `${c} правильных из ${t}`,
+    retry: "Пройти ещё раз",
+    back: "Все тесты",
+    ctaTitle: "Теперь — практика",
+    ctaText: "Запишитесь на вождение с инструктором — менеджер перезвонит.",
+    empty: "Вопросы ещё не добавлены.",
+    questionsCount: (n: number) => `${n} вопросов`,
+    timeUp: "Время вышло",
+  },
+  contacts: { title: "Контакты", call: "Позвонить", write: "Написать в Telegram" },
+  common: { more: "Подробнее", home: "Главная" },
+};
+
+export const dict = { uz, ru };
+export type Dict = typeof uz;
+export const t = (lang: Lang) => dict[lang];

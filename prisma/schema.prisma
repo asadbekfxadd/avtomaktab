@@ -1,0 +1,235 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+}
+
+enum LeadStatus {
+  NEW
+  NO_ANSWER
+  CALLBACK
+  THINKING
+  ENROLLED
+  REJECTED
+}
+
+enum CallResult {
+  REACHED
+  NO_ANSWER
+  BUSY
+  WRONG_NUMBER
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  login        String    @unique
+  passwordHash String
+  phone        String?
+  role         Role      @default(MANAGER)
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  leads        Lead[]
+  calls        CallLog[]
+}
+
+model Settings {
+  id               Int     @id @default(1)
+  schoolName       String  @default("Avtomaktab")
+  logoUrl          String?
+  primaryColor     String  @default("#1D5FBF")
+  accentColor      String  @default("#FFC72C")
+  phone            String  @default("+998 90 000 00 00")
+  phone2           String?
+  email            String?
+  instagram        String?
+  telegram         String?
+  licenseNo        String?
+  heroTitleUz      String  @default("Haydovchilik guvohnomasini birinchi urinishda oling")
+  heroTitleRu      String  @default("Права с первой попытки")
+  heroTextUz       String  @default("Nazariya, amaliyot va imtihonga tayyorgarlik — bitta joyda.")
+  heroTextRu       String  @default("Теория, вождение и подготовка к экзамену в ГАИ — в одном месте.")
+  statGraduates    Int     @default(0)
+  statPassRate     Int     @default(0)
+  statYears        Int     @default(0)
+  statCars         Int     @default(0)
+  examQuestions    Int     @default(20)
+  examMinutes      Int     @default(25)
+  examMaxErrors    Int     @default(2)
+  tgBotToken       String?
+  tgChatId         String?
+  updatedAt        DateTime @updatedAt
+}
+
+model Branch {
+  id        Int     @id @default(autoincrement())
+  nameUz    String
+  nameRu    String
+  addressUz String
+  addressRu String
+  phone     String?
+  hours     String?
+  mapUrl    String?
+  sort      Int     @default(0)
+  active    Boolean @default(true)
+  leads     Lead[]
+}
+
+model Course {
+  id            Int     @id @default(autoincrement())
+  category      String
+  titleUz       String
+  titleRu       String
+  descUz        String  @default("")
+  descRu        String  @default("")
+  durationUz    String  @default("")
+  durationRu    String  @default("")
+  theoryHours   Int     @default(0)
+  practiceHours Int     @default(0)
+  price         Int     @default(0)
+  oldPrice      Int?
+  featured      Boolean @default(false)
+  sort          Int     @default(0)
+  active        Boolean @default(true)
+  leads         Lead[]
+}
+
+model Lead {
+  id          Int        @id @default(autoincrement())
+  name        String
+  phone       String
+  status      LeadStatus @default(NEW)
+  source      String     @default("site")
+  comment     String?
+  courseId    Int?
+  course      Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  branchId    Int?
+  branch      Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  managerId   Int?
+  manager     User?      @relation(fields: [managerId], references: [id], onDelete: SetNull)
+  nextCallAt  DateTime?
+  lastCallAt  DateTime?
+  callCount   Int        @default(0)
+  utmSource   String?
+  utmCampaign String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  calls       CallLog[]
+
+  @@index([status])
+  @@index([phone])
+  @@index([nextCallAt])
+}
+
+model CallLog {
+  id          Int         @id @default(autoincrement())
+  leadId      Int
+  lead        Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId      Int?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  result      CallResult
+  statusAfter LeadStatus
+  note        String?
+  createdAt   DateTime    @default(now())
+}
+
+model Ticket {
+  id        Int        @id @default(autoincrement())
+  number    Int        @unique
+  questions Question[]
+}
+
+model Topic {
+  id        Int        @id @default(autoincrement())
+  nameUz    String
+  nameRu    String
+  sort      Int        @default(0)
+  questions Question[]
+}
+
+model Question {
+  id            Int      @id @default(autoincrement())
+  ticketId      Int?
+  ticket        Ticket?  @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  topicId       Int?
+  topic         Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  position      Int      @default(0)
+  textUz        String
+  textRu        String
+  imageUrl      String?
+  explanationUz String   @default("")
+  explanationRu String   @default("")
+  answers       Answer[]
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  position   Int      @default(0)
+  textUz     String
+  textRu     String
+  isCorrect  Boolean  @default(false)
+}
+
+model Book {
+  id        Int      @id @default(autoincrement())
+  titleUz   String
+  titleRu   String
+  descUz    String   @default("")
+  descRu    String   @default("")
+  author    String?
+  lang      String   @default("uz")
+  coverUrl  String?
+  fileUrl   String?
+  downloads Int      @default(0)
+  published Boolean  @default(true)
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Faq {
+  id         Int    @id @default(autoincrement())
+  questionUz String
+  questionRu String
+  answerUz   String
+  answerRu   String
+  sort       Int    @default(0)
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  name      String
+  text      String
+  category  String?
+  rating    Int      @default(5)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model TestAttempt {
+  id        Int      @id @default(autoincrement())
+  mode      String
+  correct   Int
+  total     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+}
+
+model StoredFile {
+  id        String   @id @default(cuid())
+  name      String
+  mime      String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+}
