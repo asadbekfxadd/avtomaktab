@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { normalizePhone, prettyPhone } from "@/lib/format";
 import { notifyTelegram, esc } from "@/lib/telegram";
+import { clientIp, rateLimited } from "@/lib/rate";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -15,18 +16,8 @@ const schema = z.object({
   website: z.string().optional(), // honeypot
 });
 
-const hits = new Map<string, number[]>();
-function limited(ip: string) {
-  const now = Date.now();
-  const arr = (hits.get(ip) ?? []).filter((t) => now - t < 10 * 60_000);
-  arr.push(now);
-  hits.set(ip, arr);
-  return arr.length > 5;
-}
-
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (limited(ip)) return NextResponse.json({ ok: false, error: "rate" }, { status: 429 });
+  if (rateLimited(`lead:${clientIp(req.headers)}`, 5, 10 * 60_000)) return NextResponse.json({ ok: false, error: "rate" }, { status: 429 });
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);

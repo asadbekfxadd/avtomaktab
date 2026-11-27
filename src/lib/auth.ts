@@ -1,12 +1,17 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { createHash } from "crypto";
 import { db } from "./db";
+import { jwtSecret } from "./secret";
 
 export const SESSION_COOKIE = "am_session";
-const secret = () => new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret-change-me-please-32chars");
+const secret = jwtSecret;
 
-export type SessionPayload = { uid: number; role: "ADMIN" | "MANAGER"; name: string };
+/** Отпечаток пароля в сессии: после смены пароля все старые входы перестают работать. */
+export const pwStamp = (passwordHash: string) => createHash("sha256").update("pv:" + passwordHash).digest("hex").slice(0, 16);
+
+export type SessionPayload = { uid: number; role: "ADMIN" | "MANAGER"; name: string; pv?: string };
 
 export async function createSession(p: SessionPayload) {
   const token = await new SignJWT(p).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("30d").sign(secret());
@@ -35,6 +40,7 @@ export async function getSession() {
   if (!s) return null;
   const user = await db.user.findUnique({ where: { id: s.uid } });
   if (!user || !user.active) return null;
+  if (s.pv !== pwStamp(user.passwordHash)) return null; // пароль сменили или сессия старого образца
   return user;
 }
 

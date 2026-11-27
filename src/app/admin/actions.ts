@@ -1,13 +1,14 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { CallResult, LeadStatus, Prisma } from "@prisma/client";
 import ExcelJS from "exceljs";
 import { db } from "@/lib/db";
-import { createSession, requireAdmin, requireUser, SESSION_COOKIE } from "@/lib/auth";
+import { createSession, pwStamp, requireAdmin, requireUser, SESSION_COOKIE } from "@/lib/auth";
+import { clientIp, rateLimited, resetLimit } from "@/lib/rate";
 import { normalizePhone } from "@/lib/format";
 import { getResource } from "@/lib/resources";
 import { visibleWhere } from "@/lib/crm";
@@ -41,9 +42,12 @@ async function deleteStored(url: string | null | undefined) {
 export async function loginAction(_: unknown, fd: FormData) {
   const login = str(fd, "login");
   const password = str(fd, "password");
-  const u = await db.user.findUnique({ where: { login } });
+  const key = `login:${clientIp(await headers())}:${login.toLowerCase()}`;
+  if (rateLimited(key, 8, 10 * 60_000)) return { error: "Слишком много попыток. Подождите 10 минут.", login };
+  const u = await db.user.findFirst({ where: { login: { equals: login, mode: "insensitive" } } });
   if (!u || !u.active || !(await bcrypt.compare(password, u.passwordHash))) return { error: "Неверный логин или пароль", login };
-  await createSession({ uid: u.id, role: u.role, name: u.name });
+  resetLimit(key);
+  await createSession({ uid: u.id, role: u.role, name: u.name, pv: pwStamp(u.passwordHash) });
   redirect(u.role === "ADMIN" ? "/admin" : "/admin/calls");
 }
 
@@ -407,7 +411,7 @@ export async function saveUserAction(fd: FormData) {
   if (id) {
     await db.user.update({ where: { id }, data: { ...base, ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}) } });
   } else {
-    if (password.length < 6) throw new Error("Пароль — минимум 6 символов");
+    if (password.length < 8) throw new Error("Пароль — минимум 8 символов");
     await db.user.create({ data: { ...base, passwordHash: await bcrypt.hash(password, 10) } });
   }
   revalidatePath("/admin/users");

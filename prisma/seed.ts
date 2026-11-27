@@ -87,7 +87,10 @@ async function main() {
   const adminCount = await db.user.count({ where: { role: "ADMIN" } });
   if (adminCount === 0) {
     const login = process.env.ADMIN_LOGIN || "admin";
-    const password = process.env.ADMIN_PASSWORD || "admin12345";
+    const password = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === "production" ? "" : "admin12345");
+    if (!password || (process.env.NODE_ENV === "production" && password === "admin12345")) {
+      throw new Error("Задайте ADMIN_PASSWORD (не admin12345) в переменных окружения: админ без пароля или с известным паролем не создаётся");
+    }
     await db.user.create({ data: { name: "Администратор", login, passwordHash: await bcrypt.hash(password, 10), role: "ADMIN" } });
     console.log(`[seed] admin created: ${login}`);
   }
